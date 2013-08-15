@@ -62,6 +62,7 @@ public:
             { "sellerror",      SEC_ADMINISTRATOR,  false, &HandleDebugSendSellErrorCommand,      "", NULL },
             { "setphaseshift",  SEC_ADMINISTRATOR,  false, &HandleDebugSendSetPhaseShiftCommand,  "", NULL },
             { "spellfail",      SEC_ADMINISTRATOR,  false, &HandleDebugSendSpellFailCommand,      "", NULL },
+            { "redirect",       SEC_ADMINISTRATOR,  true,  &HandleDebugSendRedirectCommand,       "", NULL },
             { NULL,             SEC_PLAYER,         false, NULL,                                  "", NULL }
         };
         static ChatCommand debugCommandTable[] =
@@ -419,6 +420,33 @@ public:
         data.hexlike();
         player->GetSession()->SendPacket(&data);
         handler->PSendSysMessage(LANG_COMMAND_OPCODESENT, data.GetOpcode(), unit->GetName().c_str());
+        return true;
+    }
+
+    static bool HandleDebugSendRedirectCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        char* dest = strtok((char*)args, " ");
+        char* port = strtok(NULL, " ");
+        if (!port)
+            return false;
+
+        WorldSession* session = handler->GetSession();
+        if (!session)
+        {
+            char* account = strtok(NULL, " ");
+            if (!account)
+                return false;
+
+            session = sWorld->FindSession(atol(account));
+        }
+
+        if (!session)
+            return false;
+
+        session->SendRedirect(dest, atol(port));
         return true;
     }
 
