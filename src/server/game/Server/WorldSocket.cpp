@@ -1106,7 +1106,7 @@ int WorldSocket::HandleAuthRedirect(WorldPacket& recvPacket)
     bool isRecruiter = !result.null();
 
     ACE_NEW_RETURN(m_Session, WorldSession(id, this, AccountTypes(security), expansion, mutetime, locale, recruiter, isRecruiter, SESSION_FLAG_FROM_REDIRECT), -1);
-
+    
     m_Crypt.Init(&sessionKey, m_serverEncryptSeed.AsByteArray(16), m_clientDecryptSeed.AsByteArray(16));
 
     m_Session->LoadGlobalAccountData();
