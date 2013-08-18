@@ -1252,6 +1252,8 @@ void World::LoadConfigSettings(bool reload)
 
     if((m_bool_configs[CONFIG_ENABLE_REDIRECTS] = sConfigMgr->GetBoolDefault("Redirect.Enable", false)))
        ReloadNodes();
+    m_currNode.ip = sConfigMgr->GetStringDefault("BindIP", "127.0.0.1");
+    m_currNode.port = sConfigMgr->GetIntDefault("WorldServerPort", 8085);
 }
 
 extern void LoadGameObjectModelList();
