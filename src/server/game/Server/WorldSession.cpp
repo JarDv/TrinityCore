@@ -291,6 +291,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                 switch (opHandle.status)
                 {
                     case STATUS_LOGGEDIN:
+                    case STATUS_TRANSFER:
                         if (!_player)
                         {
                             // skip STATUS_LOGGEDIN opcode unexpected errors if player logout sometime ago - this can be network lag delayed packets
@@ -305,15 +306,37 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                                 deletePacket = false;
                                 QueuePacket(packet);
                                 //! Log
-                                TC_LOG_DEBUG(LOG_FILTER_NETWORKIO, "Re-enqueueing packet with opcode %s with with status STATUS_LOGGEDIN. "
-                                    "Player is currently not in world yet.", GetOpcodeNameForLogging(packet->GetOpcode()).c_str());
+                                TC_LOG_DEBUG(LOG_FILTER_NETWORKIO, "Re-enqueueing packet with opcode %s with with status %s. "
+                                    "Player is currently not in world yet.", GetOpcodeNameForLogging(packet->GetOpcode()).c_str(),
+                                    opHandle.status == STATUS_LOGGEDIN ? "STATUS_LOGGEDIN" : "STATUS_TRANSFER");
                             }
                         }
                         else if (_player->IsInWorld())
                         {
+                            //! Redirected player always gets added to world
+                            //! While teleporting, this happens before client sends MSG_MOVE_WORLDPORT_ACK
+                            //! so we need to check for this case
+                            if (opHandle.status == STATUS_TRANSFER && !WasRedirected())
+                            {
+                                LogUnexpectedOpcode(packet, "STATUS_TRANSFER", "the player is still in world");
+                                break;
+                            }
+
                             sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
                             (this->*opHandle.handler)(*packet);
                             LogUnprocessedTail(packet);
+                        }
+                        // Out of world TRANSFER opcodes are allowed only if not redirected
+                        else if (opHandle.status == STATUS_TRANSFER)
+                        {
+                            if (!WasRedirected())
+                            {
+                                sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                                (this->*opHandle.handler)(*packet);
+                                LogUnprocessedTail(packet);
+                            }
+                            else
+                                LogUnexpectedOpcode(packet, "STATUS_TRANSFER", "redirected player is not in world");
                         }
                         // lag can cause STATUS_LOGGEDIN opcodes to arrive after the player started a transfer
                         break;
@@ -324,18 +347,6 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                         else
                         {
                             // not expected _player or must checked in packet handler
-                            sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
-                            (this->*opHandle.handler)(*packet);
-                            LogUnprocessedTail(packet);
-                        }
-                        break;
-                    case STATUS_TRANSFER:
-                        if (!_player)
-                            LogUnexpectedOpcode(packet, "STATUS_TRANSFER", "the player has not logged in yet");
-                        else if (_player->IsInWorld())
-                            LogUnexpectedOpcode(packet, "STATUS_TRANSFER", "the player is still in world");
-                        else
-                        {
                             sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
                             (this->*opHandle.handler)(*packet);
                             LogUnprocessedTail(packet);
@@ -1113,9 +1124,9 @@ void WorldSession::RedirectToNode(uint32 mapid)
         return;
 
     RedirectInfo const& ri = sWorld->GetNodeForMap(mapid);
-    if(sWorld->GetCurrentNode().ip != ri.ip || 
-       sWorld->GetCurrentNode().port != ri.port) //dont reconnect to current node
-      SendRedirect(ri.ip.c_str(), ri.port);
+    if (sWorld->GetCurrentNode().ip != ri.ip ||
+        sWorld->GetCurrentNode().port != ri.port) //dont reconnect to current node
+        SendRedirect(ri.ip.c_str(), ri.port);
 }
 
 void WorldSession::HandleSuspendComms(WorldPacket& recv)
