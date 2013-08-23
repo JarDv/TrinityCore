@@ -70,7 +70,8 @@ enum LogFilterType
     LOG_FILTER_OPCODES                           = 41,
     LOG_FILTER_SOAP                              = 42,
     LOG_FILTER_RBAC                              = 43,
-    LOG_FILTER_CHEAT                             = 44
+    LOG_FILTER_CHEAT                             = 44,
+    LOG_FILTER_SOCIALSERVER                      = 45,
 };
 
 const uint8 MaxLogFilter = 45;
