@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -194,6 +194,22 @@ class FrostBombExplosion : public BasicEvent
     private:
         Creature* _owner;
         uint64 _sindragosaGUID;
+};
+
+class FrostBeaconSelector
+{
+    public:
+        FrostBeaconSelector(Unit* source) : _source(source) { }
+
+        bool operator()(Unit* target) const
+        {
+            return target->GetTypeId() == TYPEID_PLAYER &&
+                target != _source->GetVictim() &&
+                !target->HasAura(SPELL_ICE_TOMB_UNTARGETABLE);
+        }
+
+    private:
+        Unit* _source;
 };
 
 class boss_sindragosa : public CreatureScript
@@ -466,9 +482,9 @@ class boss_sindragosa : public CreatureScript
                             me->GetMotionMaster()->MovePoint(POINT_AIR_PHASE_FAR, SindragosaAirPosFar);
                             break;
                         case EVENT_ICE_TOMB:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 0.0f, true, -SPELL_ICE_TOMB_UNTARGETABLE))
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, FrostBeaconSelector(me)))
                             {
-                                Talk(EMOTE_WARN_FROZEN_ORB, target->GetGUID());
+                                Talk(EMOTE_WARN_FROZEN_ORB, target);
                                 DoCast(target, SPELL_ICE_TOMB_DUMMY, true);
                             }
                             events.ScheduleEvent(EVENT_ICE_TOMB, urand(16000, 23000));

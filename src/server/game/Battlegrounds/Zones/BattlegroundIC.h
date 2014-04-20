@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -818,7 +818,7 @@ const Position allianceGunshipPassengers[5] =
 struct ICNodePoint
 {
     uint32 gameobject_type; // with this we will get the GameObject of that point
-    uint32 gameobject_entry; // what gamoebject entry is active here.
+    uint32 gameobject_entry; // what gameobject entry is active here.
     uint8 faction; // who has this node
     ICNodePointType nodeType; // here we can specify if it is graveyards, hangar etc...
     uint32 banners[4]; // the banners that have this point
@@ -956,8 +956,6 @@ class BattlegroundIC : public Battleground
         void UpdateNodeWorldState(ICNodePoint* nodePoint);
         void HandleCapturedNodes(ICNodePoint* nodePoint, bool recapture);
         void HandleContestedNodes(ICNodePoint* nodePoint);
-        Transport* CreateTransport(uint32 goEntry, uint32 period);
-        void SendTransportInit(Player* player);
 };
 
 #endif

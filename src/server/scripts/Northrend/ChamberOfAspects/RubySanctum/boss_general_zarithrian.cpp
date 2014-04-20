@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -229,14 +229,14 @@ class npc_onyx_flamecaller : public CreatureScript
 
             void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
             {
-                // Let Zarithrian count as summoner. _instance cant be null since we got GetRubySanctumAI
+                // Let Zarithrian count as summoner.
                 if (Creature* zarithrian = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_GENERAL_ZARITHRIAN)))
                     zarithrian->AI()->JustSummoned(me);
             }
 
             void WaypointReached(uint32 waypointId) OVERRIDE
             {
-                if (waypointId == MAX_PATH_FLAMECALLER_WAYPOINTS || waypointId == MAX_PATH_FLAMECALLER_WAYPOINTS*2)
+                if (waypointId == MAX_PATH_FLAMECALLER_WAYPOINTS - 1 || waypointId == MAX_PATH_FLAMECALLER_WAYPOINTS * 2 - 1)
                 {
                     DoZoneInCombat();
                     SetEscortPaused(true);

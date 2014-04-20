@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public:
             if (rand()%5)
                 return;
 
-            Talk(SAY_KILLTARGET, victim->GetGUID());
+            Talk(SAY_KILLTARGET, victim);
         }
 
         void UpdateAI(uint32 diff) OVERRIDE
@@ -200,7 +200,7 @@ public:
                         break;
                     case EVENT_BURNINGADRENALINE_TANK:
                         // have the victim cast the spell on himself otherwise the third effect aura will be applied to Vael instead of the player
-                        me->GetVictim()->CastSpell(me->GetVictim(), SPELL_BURNINGADRENALINE, true);
+                        me->EnsureVictim()->CastSpell(me->GetVictim(), SPELL_BURNINGADRENALINE, true);
                         events.ScheduleEvent(EVENT_BURNINGADRENALINE_TANK, 45000);
                         break;
                 }

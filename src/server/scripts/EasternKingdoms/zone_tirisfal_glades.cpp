@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public:
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
         void AttackedBy(Unit* pAttacker) OVERRIDE
         {
@@ -132,7 +132,7 @@ public:
                         ++m_uiPhase;
                         break;
                     case 2:
-                        if (Player* player = Unit::GetPlayer(*me, m_uiPlayerGUID))
+                        if (Player* player = ObjectAccessor::GetPlayer(*me, m_uiPlayerGUID))
                             player->AreaExploredOrEventHappens(QUEST_590);
 
                         DoCast(me, SPELL_DRINK, true);
@@ -177,12 +177,13 @@ public:
         if (player->GetQuestStatus(QUEST_ULAG) != QUEST_STATUS_INCOMPLETE)
             return false;
 
-        if (GameObject* pTrigger = player->FindNearestGameObject(GO_TRIGGER, 30.0f))
-        {
-            pTrigger->SetGoState(GO_STATE_READY);
-            player->SummonCreature(NPC_ULAG, 2390.26f, 336.47f, 40.01f, 2.26f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 300000);
-            return false;
-        }
+        if (!player->FindNearestCreature(NPC_ULAG, 50.0f))
+            if (GameObject* pTrigger = player->FindNearestGameObject(GO_TRIGGER, 30.0f))
+            {
+                pTrigger->SetGoState(GO_STATE_READY);
+                player->SummonCreature(NPC_ULAG, 2390.26f, 336.47f, 40.01f, 2.26f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 300000);
+                return false;
+            }
 
         return false;
     }

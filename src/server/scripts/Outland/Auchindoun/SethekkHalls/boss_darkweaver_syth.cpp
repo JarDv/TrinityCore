@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public:
 
         void Reset() OVERRIDE
         {
+            _Reset();
             summon90 = false;
             summon50 = false;
             summon10 = false;
@@ -82,6 +83,7 @@ public:
 
         void EnterCombat(Unit* /*who*/) OVERRIDE
         {
+            _EnterCombat();
             events.ScheduleEvent(EVENT_FLAME_SHOCK, 2000);
             events.ScheduleEvent(EVENT_ARCANE_SHOCK, 4000);
             events.ScheduleEvent(EVENT_FROST_SHOCK, 6000);
@@ -93,18 +95,14 @@ public:
 
         void JustDied(Unit* /*killer*/) OVERRIDE
         {
+            _JustDied();
             Talk(SAY_DEATH);
-
-            if (instance)
-                instance->SetData(DATA_DARKWEAVER_SYTH, DONE);
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* who) OVERRIDE
         {
-            if (rand()%2)
-                return;
-
-            Talk(SAY_SLAY);
+            if (who->GetTypeId() == TYPEID_PLAYER)
+                Talk(SAY_SLAY);
         }
 
         void JustSummoned(Creature* summoned) OVERRIDE
@@ -117,7 +115,7 @@ public:
         {
             Talk(SAY_SUMMON);
 
-            if (me->IsNonMeleeSpellCasted(false))
+            if (me->IsNonMeleeSpellCast(false))
                 me->InterruptNonMeleeSpells(false);
 
             DoCast(me, SPELL_SUMMON_SYTH_ARCANE, true);   //front
@@ -196,7 +194,7 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_darkweaver_sythAI(creature);
+        return GetSethekkHallsAI<boss_darkweaver_sythAI>(creature);
     }
 };
 
@@ -222,7 +220,7 @@ public:
             flamebuffet_timer = 5000;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
         void UpdateAI(uint32 diff) OVERRIDE
         {
@@ -281,7 +279,7 @@ public:
             arcanebuffet_timer = 5000;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
         void UpdateAI(uint32 diff) OVERRIDE
         {
@@ -335,7 +333,7 @@ public:
             frostbuffet_timer = 5000;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
         void UpdateAI(uint32 diff) OVERRIDE
         {
@@ -390,7 +388,7 @@ public:
             shadowbuffet_timer = 5000;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
         void UpdateAI(uint32 diff) OVERRIDE
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -545,7 +545,7 @@ class boss_lady_deathwhisper : public CreatureScript
             void Summon(uint32 entry, const Position& pos)
             {
                 if (TempSummon* summon = me->SummonCreature(entry, pos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10000))
-                    summon->AI()->DoCast(summon, SPELL_TELEPORT_VISUAL);
+                    summon->CastSpell(summon, SPELL_TELEPORT_VISUAL);
             }
 
             void SetGUID(uint64 guid, int32 id/* = 0*/) OVERRIDE
@@ -633,7 +633,7 @@ class npc_cult_fanatic : public CreatureScript
 
         struct npc_cult_fanaticAI : public ScriptedAI
         {
-            npc_cult_fanaticAI(Creature* creature) : ScriptedAI(creature) {}
+            npc_cult_fanaticAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() OVERRIDE
             {
@@ -710,7 +710,7 @@ class npc_cult_adherent : public CreatureScript
 
         struct npc_cult_adherentAI : public ScriptedAI
         {
-            npc_cult_adherentAI(Creature* creature) : ScriptedAI(creature) {}
+            npc_cult_adherentAI(Creature* creature) : ScriptedAI(creature) { }
 
             void Reset() OVERRIDE
             {
@@ -890,7 +890,7 @@ class npc_darnavan : public CreatureScript
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                if (_canShatter && me->GetVictim() && me->GetVictim()->IsImmunedToDamage(SPELL_SCHOOL_MASK_NORMAL))
+                if (_canShatter && me->GetVictim() && me->EnsureVictim()->IsImmunedToDamage(SPELL_SCHOOL_MASK_NORMAL))
                 {
                     DoCastVictim(SPELL_SHATTERING_THROW);
                     _canShatter = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -223,7 +223,7 @@ enum ArgentTournamentAreas
 class achievement_tilted : public AchievementCriteriaScript
 {
     public:
-        achievement_tilted() : AchievementCriteriaScript("achievement_tilted") {}
+        achievement_tilted() : AchievementCriteriaScript("achievement_tilted") { }
 
         bool OnCheck(Player* player, Unit* /*target*/) OVERRIDE
         {
@@ -279,6 +279,17 @@ class achievement_flirt_with_disaster_perf_check : public AchievementCriteriaScr
         }
 };
 
+class achievement_killed_exp_or_honor_target : public AchievementCriteriaScript
+{
+    public:
+        achievement_killed_exp_or_honor_target() : AchievementCriteriaScript("achievement_killed_exp_or_honor_target") { }
+
+        bool OnCheck(Player* player, Unit* target) OVERRIDE
+        {
+            return target && player->isHonorOrXPTarget(target);
+        }
+};
+
 void AddSC_achievement_scripts()
 {
     new achievement_resilient_victory();
@@ -298,4 +309,5 @@ void AddSC_achievement_scripts()
     new achievement_tilted();
     new achievement_not_even_a_scratch();
     new achievement_flirt_with_disaster_perf_check();
+    new achievement_killed_exp_or_honor_target();
 }

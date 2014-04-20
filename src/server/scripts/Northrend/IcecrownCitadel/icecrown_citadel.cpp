@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -288,7 +288,7 @@ enum MovementPoints
 class FrostwingVrykulSearcher
 {
     public:
-        FrostwingVrykulSearcher(Creature const* source, float range) : _source(source), _range(range) {}
+        FrostwingVrykulSearcher(Creature const* source, float range) : _source(source), _range(range) { }
 
         bool operator()(Unit* unit)
         {
@@ -628,7 +628,7 @@ class npc_rotting_frost_giant : public CreatureScript
                         case EVENT_DEATH_PLAGUE:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 0.0f, true))
                             {
-                                Talk(EMOTE_DEATH_PLAGUE_WARNING, target->GetGUID());
+                                Talk(EMOTE_DEATH_PLAGUE_WARNING, target);
                                 DoCast(target, SPELL_DEATH_PLAGUE);
                             }
                             _events.ScheduleEvent(EVENT_DEATH_PLAGUE, 15000);
@@ -841,7 +841,7 @@ class boss_sister_svalna : public CreatureScript
                 if (spell->Id == SPELL_HURL_SPEAR && me->HasAura(SPELL_AETHER_SHIELD))
                 {
                     me->RemoveAurasDueToSpell(SPELL_AETHER_SHIELD);
-                    Talk(EMOTE_SVALNA_BROKEN_SHIELD, caster->GetGUID());
+                    Talk(EMOTE_SVALNA_BROKEN_SHIELD, caster);
                 }
             }
 
@@ -867,7 +867,7 @@ class boss_sister_svalna : public CreatureScript
                     case SPELL_IMPALING_SPEAR:
                         if (TempSummon* summon = target->SummonCreature(NPC_IMPALING_SPEAR, *target))
                         {
-                            Talk(EMOTE_SVALNA_IMPALE, target->GetGUID());
+                            Talk(EMOTE_SVALNA_IMPALE, target);
                             summon->CastCustomSpell(VEHICLE_SPELL_RIDE_HARDCODED, SPELLVALUE_BASE_POINT0, 1, target, false);
                             summon->SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_UNK1 | UNIT_FLAG2_ALLOW_ENEMY_INTERACT);
                         }
@@ -1833,7 +1833,7 @@ class spell_icc_sprit_alarm : public SpellScriptLoader
 class DeathPlagueTargetSelector
 {
     public:
-        explicit DeathPlagueTargetSelector(Unit* caster) : _caster(caster) {}
+        explicit DeathPlagueTargetSelector(Unit* caster) : _caster(caster) { }
 
         bool operator()(WorldObject* object) const
         {
@@ -2034,6 +2034,7 @@ class spell_svalna_remove_spear : public SpellScriptLoader
         }
 };
 
+// 72585 - Soul Missile
 class spell_icc_soul_missile : public SpellScriptLoader
 {
     public:
@@ -2043,15 +2044,15 @@ class spell_icc_soul_missile : public SpellScriptLoader
         {
             PrepareSpellScript(spell_icc_soul_missile_SpellScript);
 
-            void RelocateDest()
+            void RelocateDest(SpellDestination& dest)
             {
-                static Position const offset = {0.0f, 0.0f, 200.0f, 0.0f};
-                const_cast<WorldLocation*>(GetExplTargetDest())->RelocateOffset(offset);
+                static Position const offset = { 0.0f, 0.0f, 200.0f, 0.0f };
+                dest.RelocateOffset(offset);
             }
 
             void Register() OVERRIDE
             {
-                OnCast += SpellCastFn(spell_icc_soul_missile_SpellScript::RelocateDest);
+                OnDestinationTargetSelect += SpellDestinationTargetSelectFn(spell_icc_soul_missile_SpellScript::RelocateDest, EFFECT_0, TARGET_DEST_CASTER);
             }
         };
 

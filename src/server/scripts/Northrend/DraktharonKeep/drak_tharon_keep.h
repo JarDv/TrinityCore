@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -17,9 +17,6 @@
 
 #ifndef DRAK_THARON_KEEP_H_
 #define DRAK_THARON_KEEP_H_
-
-#include "Map.h"
-#include "Creature.h"
 
 #define DrakTharonKeepScriptName "instance_drak_tharon_keep"
 
@@ -89,11 +86,7 @@ enum GameObjectIds
 template<class AI>
 AI* GetDrakTharonKeepAI(Creature* creature)
 {
-    if (InstanceMap* instance = creature->GetMap()->ToInstanceMap())
-        if (instance->GetInstanceScript())
-            if (instance->GetScriptId() == sObjectMgr->GetScriptId(DrakTharonKeepScriptName))
-                return new AI(creature);
-    return NULL;
+    return GetInstanceAI<AI>(creature, DrakTharonKeepScriptName);
 }
 
 #endif // DRAK_THARON_KEEP_H_

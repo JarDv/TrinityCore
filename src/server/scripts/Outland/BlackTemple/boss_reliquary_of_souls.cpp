@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public:
 
     struct npc_enslaved_soulAI : public ScriptedAI
     {
-        npc_enslaved_soulAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_enslaved_soulAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint64 ReliquaryGUID;
 
@@ -134,7 +134,7 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_reliquary_of_soulsAI(creature);
+        return GetInstanceAI<boss_reliquary_of_soulsAI>(creature);
     }
 
     struct boss_reliquary_of_soulsAI : public ScriptedAI
@@ -158,15 +158,13 @@ public:
 
         void Reset() OVERRIDE
         {
-            if (instance)
-                instance->SetData(DATA_RELIQUARYOFSOULSEVENT, NOT_STARTED);
+            instance->SetBossState(DATA_RELIQUARY_OF_SOULS, NOT_STARTED);
 
             if (EssenceGUID)
             {
-                if (Creature* Essence = Unit::GetCreature(*me, EssenceGUID))
-                {
-                    Essence->DespawnOrUnsummon();
-                }
+                if (Creature* essence = ObjectAccessor::GetCreature(*me, EssenceGUID))
+                    essence->DespawnOrUnsummon();
+
                 EssenceGUID = 0;
             }
 
@@ -178,7 +176,6 @@ public:
         }
 
         void MoveInLineOfSight(Unit* who) OVERRIDE
-
         {
             if (!who)
                 return;
@@ -199,8 +196,7 @@ public:
         {
             me->AddThreat(who, 10000.0f);
             DoZoneInCombat();
-            if (instance)
-                instance->SetData(DATA_RELIQUARYOFSOULSEVENT, IN_PROGRESS);
+            instance->SetBossState(DATA_RELIQUARY_OF_SOULS, IN_PROGRESS);
 
             Phase = 1;
             Counter = 0;
@@ -245,8 +241,7 @@ public:
 
         void JustDied(Unit* /*killer*/) OVERRIDE
         {
-            if (instance)
-                instance->SetData(DATA_RELIQUARYOFSOULSEVENT, DONE);
+            instance->SetBossState(DATA_RELIQUARY_OF_SOULS, DONE);
         }
 
         void UpdateAI(uint32 diff) OVERRIDE
@@ -300,13 +295,13 @@ public:
                     Timer = 1000;
                     if (Phase == 3)
                     {
-                        if (!Essence->IsAlive())
+                        if (Essence && !Essence->IsAlive())
                             DoCast(me, 7, true);
                         else return;
                     }
                     else
                     {
-                        if (Essence->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
+                        if (Essence && Essence->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
                         {
                             MergeThreatList(Essence);
                             Essence->RemoveAllAuras();
@@ -317,31 +312,37 @@ public:
                     break;
                 case 4:
                     Timer = 1500;
-                    if (Essence->IsWithinDistInMap(me, 10))
+                    if (Essence)
                     {
-                        Essence->SetUInt32Value(UNIT_NPC_EMOTESTATE, 374); //rotate and disappear
-                        Timer = 2000;
-                        me->RemoveAurasDueToSpell(SPELL_SUBMERGE);
-                    }
-                    else
-                    {
-                        MergeThreatList(Essence);
-                        Essence->RemoveAllAuras();
-                        Essence->DeleteThreatList();
-                        Essence->GetMotionMaster()->MoveFollow(me, 0, 0);
-                        return;
+                        if (Essence->IsWithinDistInMap(me, 10))
+                        {
+                            Essence->SetUInt32Value(UNIT_NPC_EMOTESTATE, 374); //rotate and disappear
+                            Timer = 2000;
+                            me->RemoveAurasDueToSpell(SPELL_SUBMERGE);
+                        }
+                        else
+                        {
+                            MergeThreatList(Essence);
+                            Essence->RemoveAllAuras();
+                            Essence->DeleteThreatList();
+                            Essence->GetMotionMaster()->MoveFollow(me, 0, 0);
+                            return;
+                        }
                     }
                     break;
                 case 5:
-                    if (Phase == 1)
+                    if (Essence)
                     {
-                        Essence->AI()->Talk(SUFF_SAY_AFTER);
+                        if (Phase == 1)
+                        {
+                            Essence->AI()->Talk(SUFF_SAY_AFTER);
+                        }
+                        else
+                        {
+                            Essence->AI()->Talk(DESI_SAY_AFTER);
+                        }
+                        Essence->DespawnOrUnsummon();
                     }
-                    else
-                    {
-                        Essence->AI()->Talk(DESI_SAY_AFTER);
-                    }
-                    Essence->DespawnOrUnsummon();
                     me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
                     EssenceGUID = 0;
                     SoulCount = 0;
@@ -395,7 +396,7 @@ public:
 
     struct boss_essence_of_sufferingAI : public ScriptedAI
     {
-        boss_essence_of_sufferingAI(Creature* creature) : ScriptedAI(creature) {}
+        boss_essence_of_sufferingAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint64 StatAuraGUID;
 
@@ -422,7 +423,6 @@ public:
             {
                 damage = 0;
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                me->Yell(SUFF_SAY_RECAP, LANG_UNIVERSAL, 0);
                 Talk(SUFF_SAY_RECAP);
                 me->SetReactState(REACT_PASSIVE);
             }
@@ -431,14 +431,13 @@ public:
         void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             if (!me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
-                {
+            {
                 Talk(SUFF_SAY_FREED);
                 DoZoneInCombat();
                 DoCast(me, AURA_OF_SUFFERING, true); // linked aura need core support
                 DoCast(me, ESSENCE_OF_SUFFERING_PASSIVE, true);
                 DoCast(me, ESSENCE_OF_SUFFERING_PASSIVE2, true);
-                }
-            else return;
+            }
         }
 
         void KilledUnit(Unit* /*victim*/) OVERRIDE
@@ -520,7 +519,7 @@ public:
 
     struct boss_essence_of_desireAI : public ScriptedAI
     {
-        boss_essence_of_desireAI(Creature* creature) : ScriptedAI(creature) {}
+        boss_essence_of_desireAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 RuneShieldTimer;
         uint32 DeadenTimer;
@@ -623,7 +622,7 @@ public:
 
     struct boss_essence_of_angerAI : public ScriptedAI
     {
-        boss_essence_of_angerAI(Creature* creature) : ScriptedAI(creature) {}
+        boss_essence_of_angerAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint64 AggroTargetGUID;
 
@@ -669,22 +668,22 @@ public:
         void UpdateAI(uint32 diff) OVERRIDE
         {
             //Return since we have no target
-            if (!UpdateVictim())
+            if (!UpdateVictim() || !me->GetVictim())
                 return;
 
             if (!CheckedAggro)
             {
-                AggroTargetGUID = me->GetVictim()->GetGUID();
+                AggroTargetGUID = me->EnsureVictim()->GetGUID();
                 CheckedAggro = true;
             }
 
             if (CheckTankTimer <= diff)
             {
-                if (me->GetVictim()->GetGUID() != AggroTargetGUID)
+                if (me->EnsureVictim()->GetGUID() != AggroTargetGUID)
                 {
                     Talk(ANGER_SAY_BEFORE);
                     DoCast(me, SPELL_SELF_SEETHE, true);
-                    AggroTargetGUID = me->GetVictim()->GetGUID();
+                    AggroTargetGUID = me->EnsureVictim()->GetGUID();
                 }
                 CheckTankTimer = 2000;
             } else CheckTankTimer -= diff;
