@@ -318,8 +318,9 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                                 deletePacket = false;
                                 QueuePacket(packet);
                                 //! Log
-                                TC_LOG_DEBUG("network", "Re-enqueueing packet with opcode %s with with status STATUS_LOGGEDIN. "
-                                    "Player is currently not in world yet.", GetOpcodeNameForLogging(packet->GetOpcode()).c_str());
+                                TC_LOG_DEBUG("network", "Re-enqueueing packet with opcode %s with with status %s. "
+                                    "Player is currently not in world yet.", GetOpcodeNameForLogging(packet->GetOpcode()).c_str(),
+                                    opHandle.status == STATUS_LOGGEDIN ? "STATUS_LOGGEDIN" : "STATUS_TRANSFER");
                             }
                         }
                         else if (_player->IsInWorld())
@@ -992,7 +993,7 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
 
             addonInfo >> enabled >> crc >> unk1;
 
-            TC_LOG_INFO("misc", "ADDON: Name: %s, Enabled: 0x%x, CRC: 0x%x, Unknown2: 0x%x", addonName.c_str(), enabled, crc, unk1);
+            TC_LOG_DEBUG("network", "ADDON: Name: %s, Enabled: 0x%x, CRC: 0x%x, Unknown2: 0x%x", addonName.c_str(), enabled, crc, unk1);
 
 
             AddonInfo addon(addonName, enabled, crc, 2, true);
@@ -1001,14 +1002,14 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
             if (savedAddon)
             {
                 if (addon.CRC != savedAddon->CRC)
-                    TC_LOG_INFO("misc", "ADDON: %s was known, but didn't match known CRC (0x%x)!", addon.Name.c_str(), savedAddon->CRC);
+                    TC_LOG_DEBUG("network", "ADDON: %s was known, but didn't match known CRC (0x%x)!", addon.Name.c_str(), savedAddon->CRC);
                 else
-                    TC_LOG_INFO("misc", "ADDON: %s was known, CRC is correct (0x%x)", addon.Name.c_str(), savedAddon->CRC);
+                    TC_LOG_DEBUG("network", "ADDON: %s was known, CRC is correct (0x%x)", addon.Name.c_str(), savedAddon->CRC);
             }
             else
             {
                 AddonMgr::SaveAddon(addon);
-                TC_LOG_INFO("misc", "ADDON: %s (0x%x) was not known, saving...", addon.Name.c_str(), addon.CRC);
+                TC_LOG_INFO("network", "ADDON: %s (0x%x) was not known, saving...", addon.Name.c_str(), addon.CRC);
             }
 
             /// @todo Find out when to not use CRC/pubkey, and other possible states.
@@ -1017,10 +1018,10 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
 
         uint32 currentTime;
         addonInfo >> currentTime;
-        TC_LOG_DEBUG("network", "ADDON: CurrentTime: %u", currentTime);
+        TC_LOG_TRACE("network", "ADDON: CurrentTime: %u", currentTime);
     }
     else
-        TC_LOG_ERROR("misc", "Addon packet uncompress error!");
+        TC_LOG_ERROR("network", "Addon packet uncompress error!");
 }
 
 void WorldSession::SendAddonsInfo()

@@ -164,9 +164,7 @@ int WorldSocket::SendPacket(WorldPacket const& pct)
 
     WorldPacket const* pkt = &pct;
 
-    if (m_Session)
-        TC_LOG_TRACE("network.opcode", "S->C: %s %s", m_Session->GetPlayerInfo().c_str(), GetOpcodeNameForLogging(pkt->GetOpcode()).c_str());
-
+    TC_LOG_TRACE("network.opcode", "S->C: %s %s", (m_Session ? m_Session->GetPlayerInfo() : m_Address).c_str(), GetOpcodeNameForLogging(pkt->GetOpcode()).c_str());
 
     sScriptMgr->OnPacketSend(this, *pkt);
 
@@ -672,8 +670,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
         sPacketLog->LogPacket(*new_pct, CLIENT_TO_SERVER);
 
     std::string opcodeName = GetOpcodeNameForLogging(opcode);
-    if (m_Session)
-        TC_LOG_TRACE("network.opcode", "C->S: %s %s", m_Session->GetPlayerInfo().c_str(), opcodeName.c_str());
+    TC_LOG_TRACE("network.opcode", "C->S: %s %s", (m_Session ? m_Session->GetPlayerInfo() : m_Address).c_str(), opcodeName.c_str());
 
     try
     {
@@ -695,7 +692,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                 sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
                 return 0;
             case CMSG_REDIRECTION_AUTH_PROOF:
-               return HandleAuthRedirect(*new_pct);
+                return HandleAuthRedirect(*new_pct);
             default:
             {
                 ACE_GUARD_RETURN(LockType, Guard, m_SessionLock, -1);
@@ -1034,7 +1031,7 @@ int WorldSocket::HandleAuthRedirect(WorldPacket& recvPacket)
         LoginDatabase.Execute(stmt);
     }
 
-    locale = LocaleConstant (fields[6].GetUInt8());
+    locale = LocaleConstant(fields[6].GetUInt8());
     if (locale >= TOTAL_LOCALES)
         locale = LOCALE_enUS;
 
@@ -1113,7 +1110,7 @@ int WorldSocket::HandleAuthRedirect(WorldPacket& recvPacket)
     bool isRecruiter = !result.null();
 
     ACE_NEW_RETURN(m_Session, WorldSession(id, this, AccountTypes(security), expansion, mutetime, locale, recruiter, isRecruiter, SESSION_FLAG_FROM_REDIRECT), -1);
-    
+
     m_Crypt.Init(&sessionKey, m_serverEncryptSeed.AsByteArray(16).get(), m_clientDecryptSeed.AsByteArray(16).get());
 
     m_Session->LoadGlobalAccountData();
