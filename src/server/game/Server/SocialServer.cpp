@@ -2,6 +2,7 @@
 #include "ZmqContext.h"
 #include "Config.h"
 #include "Log.h"
+#include "GroupMgr.h"
 #include "GuildMgr.h"
 #include "World.h"
 #include "Commands.h"
@@ -64,14 +65,14 @@ void SocialServer::Update()
     }
 }
 
-void SocialServer::HandleCommand(zmqpp::message const& msg)
+void SocialServer::HandleCommand(zmqpp::message& msg)
 {
     RedirectInfo source;
     uint16 command;
 
-    msg.get(source.ip, 0);
-    msg.get(source.port, 1);
-    msg.get(command, 2);
+    msg >> source.ip;
+    msg >> source.port;
+    msg >> command;
 
     switch (command)
     {
@@ -79,7 +80,7 @@ void SocialServer::HandleCommand(zmqpp::message const& msg)
         {
             // ignore if we sent this request, only disconnect client from other nodes
             uint32 accountId;
-            msg.get(accountId, 3);
+            msg >> accountId;
 
             if (WorldSession* session = sWorld->FindSession(accountId))
             {
@@ -99,10 +100,10 @@ void SocialServer::HandleCommand(zmqpp::message const& msg)
             uint8 const* data;
             uint8 target;
 
-            msg.get(opcode, 3);
-            msg.get(size, 4);
-            msg.get(data, 5);
-            msg.get(target, 6);
+            msg >> opcode;
+            msg >> size;
+            msg >> data;
+            msg >> target;
 
             WorldPacket packet(opcode, size);
             if (size)
@@ -111,42 +112,44 @@ void SocialServer::HandleCommand(zmqpp::message const& msg)
                 packet.put(0, data, size);
             }
 
-            switch (target) 
+            switch (target)
             {
-                case GUILD: 
+                case BROADCAST_GUILD:
                 {
                     uint32 guildId;
-                    msg.get(guildId, 7);
+                    msg >> guildId;
                     if (Guild* guild = sGuildMgr->GetGuildById(guildId))
                         guild->BroadcastPacket(msg, &packet);
                     break;
                 }
-                case GROUP: 
-                    uint32 guildId;
-                    msg.get(guildId, 7);
-                    //if (Group* group = sGroupMgr->GetGroupByGUID(guildId))
-                    //    guild->BroadcastPacket(msg, &packet);
+                case BROADCAST_GROUP:
+                {
+                    uint32 groupGuid;
+                    msg >> groupGuid;
+                    if (Group* group = sGroupMgr->GetGroupByGUID(groupGuid))
+                        group->BroadcastPacket(msg, &packet);
                     break;
-                case PLAYER:
+                }
+                case BROADCAST_PLAYER:
                 {
                     uint64 guid;
-                    msg.get(guid, 7);
+                    msg >> guid;
                     if (Player* player = HashMapHolder<Player>::Find(guid))
                         player->GetSession()->SendPacket(&packet);
                     break;
                 }
-                case ACCOUNT:
+                case BROADCAST_ACCOUNT:
                 {
                     uint32 accountId;
-                    msg.get(accountId, 7);
+                    msg >> accountId;
                     if (WorldSession* session = sWorld->FindSession(accountId))
                         session->SendPacket(&packet);
                     break;
                 }
-                case PENDING_SESSION:
+                case BROADCAST_PENDING_SESSION:
                 {
                     uint32 accountId;
-                    msg.get(accountId, 7);
+                    msg >> accountId;
                     auto itr = _sessionQueue.find(accountId);
                     if (itr != _sessionQueue.end())
                     {
