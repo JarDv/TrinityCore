@@ -14,9 +14,11 @@ SocialServer::SocialServer() :
 {
     push_socket->connect(sConfigMgr->GetStringDefault("Redirect.SocialServer", "inproc://no-ss"));
     pull_socket->connect("tcp://localhost:9998");
-
-    pull_socket->subscribe("");
     host_id = (uint32)rand32();
+    char subscribe_id[5] = {0};
+    memcpy(subscribe_id, &host_id, 4);
+    pull_socket->subscribe("\xFF\xFF\xFF\xFF");
+    pull_socket->subscribe(subscribe_id);
     poller->add(*pull_socket, zmqpp::poller::poll_in);
 
     TC_LOG_INFO("socialserver", "Connected to socialserver");
@@ -68,11 +70,13 @@ void SocialServer::HandleCommand(zmqpp::message& msg)
 {
     uint16 command;
     uint32 source;
-
+    uint32 envelope;
+    
+    msg >> envelope;
     msg >> source;
     msg >> command;
 
-    printf("Received %u from %u\n", command, source);
+    printf("Received %u from %u envelope %u\n", command, source, envelope);
     switch (command)
     {
         case SUSPEND_COMMS:

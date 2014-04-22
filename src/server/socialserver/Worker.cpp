@@ -35,7 +35,9 @@ void Worker::dispatch(const zmqpp::message& msg)
 
 void Worker::HandleBroadcastPacket(zmqpp::message const& msg)
 {
-    results->send(const_cast<zmqpp::message&>(msg));
+    zmqpp::message m = msg.copy();
+    m.push_front(0xFFFFFFFF);
+    results->send(const_cast<zmqpp::message&>(m));
 }
 
 const opcode_handler handlers[OPCODES_MAX] = {
