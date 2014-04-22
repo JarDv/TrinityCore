@@ -1130,8 +1130,6 @@ int WorldSocket::HandleAuthRedirect(WorldPacket& recvPacket)
 
     RedirectInfo const& ri = sWorld->GetCurrentNode();
     zmqpp::message msg;
-    msg << ri.ip;
-    msg << ri.port;
     msg << uint16(SUSPEND_COMMS);
     msg << uint32(id);
     sSocialServer->SendCommand(msg);

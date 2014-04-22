@@ -16,7 +16,7 @@ SocialServer::SocialServer() :
     pull_socket->connect("tcp://localhost:9998");
 
     pull_socket->subscribe("");
-
+    host_id = (uint32)rand32();
     poller->add(*pull_socket, zmqpp::poller::poll_in);
 
     TC_LOG_INFO("socialserver", "Connected to socialserver");
@@ -36,13 +36,12 @@ void SocialServer::Init(RedirectInfo const& currentNode)
 
 void SocialServer::SendCommand(zmqpp::message& msg)
 {
+    msg.push_front(host_id);
     push_socket->send(msg);
 }
 
 void SocialServer::BuildPacketCommand(zmqpp::message& msg, WorldPacket& packet)
 {
-    msg << current_node.ip;
-    msg << uint16(current_node.port);
     msg << uint16(BROADCAST_PACKET);
     msg << uint16(packet.GetOpcode());
     msg << uint32(packet.size());
@@ -67,30 +66,33 @@ void SocialServer::Update()
 
 void SocialServer::HandleCommand(zmqpp::message& msg)
 {
-    RedirectInfo source;
     uint16 command;
+    uint32 source;
 
-    msg >> source.ip;
-    msg >> source.port;
+    msg >> source;
     msg >> command;
 
+    printf("Received %u from %u\n", command, source);
     switch (command)
     {
         case SUSPEND_COMMS:
         {
-            // ignore if we sent this request, only disconnect client from other nodes
             uint32 accountId;
             msg >> accountId;
-
+	    printf("SUSPEND_COMMS: %u", accountId);
             if (WorldSession* session = sWorld->FindSession(accountId))
             {
-                if (source.ip != current_node.ip || source.port != current_node.port)
+         	printf("Session found");
+        	// ignore if we sent this request, only disconnect client from other nodes
+                if (source != host_id)
                 {
                     WorldPacket suspend(SMSG_SUSPEND_COMMS, 4);
                     suspend << uint32(0);
                     session->SendPacket(&suspend);
                 }
             }
+	    else
+	      printf("Session not found");
             break;
         }
         case BROADCAST_PACKET:
